@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The main window. No filesystem, shell or dialog access: files are opened, saved and imported only through the app's own commands, which show native dialogs from Rust.",
-  "windows": ["main"],
+  "description": "Every window (the Library and project windows). No filesystem, shell or dialog access: files are opened, saved and imported only through the app's own commands, which show native dialogs from Rust.",
+  "windows": ["main", "project-*", "library-*"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",

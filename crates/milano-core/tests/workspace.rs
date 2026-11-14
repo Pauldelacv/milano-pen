@@ -334,3 +334,41 @@ fn benchmark_board_is_fast_to_open() {
     assert!(undone.removed_cards.len() >= 1000);
     assert!(ws.open_board(child).is_err());
 }
+
+#[test]
+fn copies_cards_and_their_files_between_projects() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut a = Workspace::open(&AppPaths::new(dir.path().join("A.milanopen"))).unwrap();
+    let mut b = Workspace::open(&AppPaths::new(dir.path().join("B.milanopen"))).unwrap();
+    let (ra, rb) = (a.root_board_id().unwrap(), b.root_board_id().unwrap());
+
+    let img = dir.path().join("pic.png");
+    image::RgbImage::from_pixel(40, 20, image::Rgb([0, 120, 0]))
+        .save_with_format(&img, image::ImageFormat::Png)
+        .unwrap();
+    let imported = a.import_files(&ra, &[img], (10.0, 10.0)).unwrap();
+    let n = a.create_cards(&[note(&ra, 100.0, 0.0, "hello")]).unwrap();
+    let ids = vec![imported.patch.created[0].clone(), n.created[0].clone()];
+
+    let snap = a.snapshot(&ids).unwrap();
+    let files = a.snapshot_assets(&snap).unwrap();
+    assert_eq!(files.len(), 1, "only the image has a file");
+    let added = b.adopt_assets(&files).unwrap();
+    assert_eq!(added.len(), 1);
+    assert!(b.adopt_assets(&files).unwrap().is_empty(), "adopting twice is a no-op");
+    let patch = b.paste_snapshot(&rb, &snap, Some((0.0, 0.0))).unwrap();
+    assert_eq!(patch.created.len(), 2);
+
+    let asset_id = files[0].0.id.clone();
+    let copied = b.asset_store().unwrap().original_path(&asset_id, "png");
+    assert!(copied.exists(), "the original was copied into project B");
+    assert!(b.asset(&asset_id).unwrap().is_some());
+    let view = b.open_board(&rb).unwrap();
+    assert_eq!(view.cards.len(), 2);
+    assert!(view.cards.iter().any(|c| c.data["assetId"] == json!(asset_id)));
+
+    // Undo in B only touches B.
+    b.undo().unwrap();
+    assert_eq!(b.open_board(&rb).unwrap().cards.len(), 0);
+    assert_eq!(a.open_board(&ra).unwrap().cards.len(), 2);
+}

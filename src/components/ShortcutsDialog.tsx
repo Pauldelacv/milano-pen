@@ -21,6 +21,9 @@ const SHORTCUTS: [string, string][] = [
   ['⌘= / ⌘− / ⌘0 / ⌘1', 'Zoom in / out / 100% / fit'],
   ['⌘K', 'Search'],
   ['⌘↑ / ⇧⌘H', 'Parent board / Home'],
+  ['⌘P', 'Print the current view (or save it as PDF)'],
+  ['⌘O / ⌥⌘N', 'Open / new project (in its own window)'],
+  ['⌘W', 'Close the window'],
   ['⌘,', 'Settings'],
 ];
 

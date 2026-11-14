@@ -35,7 +35,8 @@ export const CardView = memo(function CardView({ id }: { id: string }) {
         transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
         width: card.w,
         height: card.h ?? undefined,
-        zIndex: editing ? 1_000_000_000 : card.z,
+        // Editing, or a selected image (its toolbar and adjustment panel), sits on top.
+        zIndex: editing ? 1_000_000_000 : selected && card.kind === 'image' ? 999_999_999 : card.z,
       }}
     >
       <Content card={card} editing={editing} selected={selected} />

@@ -168,6 +168,53 @@ impl Workspace {
         Ok(n)
     }
 
+    /// A snapshot of `ids` for a clipboard held outside this workspace (the
+    /// app's clipboard is shared between open projects).
+    pub fn snapshot(&self, ids: &[String]) -> Result<Snapshot> {
+        cards::snapshot(&self.conn, ids)
+    }
+
+    /// Paste a snapshot taken from this or another workspace. Assets it
+    /// references must already be here (see [`Workspace::adopt_assets`]).
+    pub fn paste_snapshot(&mut self, board_id: &str, snap: &Snapshot, at: Option<(f64, f64)>) -> Result<Patch> {
+        self.mutate("Paste", None, |tx, rec| cards::paste(tx, rec, snap, board_id, at, (PASTE_OFFSET, PASTE_OFFSET)))
+    }
+
+    /// The assets a snapshot's cards use, with the path of each original in
+    /// this workspace's store (assets whose file is missing are skipped).
+    pub fn snapshot_assets(&self, snap: &Snapshot) -> Result<Vec<(Asset, PathBuf)>> {
+        let Some(store) = &self.store else { return Ok(vec![]) };
+        let mut seen = std::collections::HashSet::new();
+        let mut out = Vec::new();
+        for c in &snap.cards {
+            let Some(id) = c.data.get("assetId").and_then(|v| v.as_str()) else { continue };
+            if !seen.insert(id.to_string()) {
+                continue;
+            }
+            if let Some(asset) = store.get(&self.conn, id)? {
+                let path = store.original_path(&asset.id, &asset.ext);
+                if path.is_file() {
+                    out.push((asset, path));
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// Copy assets from another workspace's store into this one (originals
+    /// and metadata; thumbnails are regenerated on demand). Returns the
+    /// assets that were new here.
+    pub fn adopt_assets(&mut self, assets: &[(Asset, PathBuf)]) -> Result<Vec<Asset>> {
+        let store = self.store()?.clone();
+        let mut added = Vec::new();
+        for (asset, src) in assets {
+            if store.adopt(&self.conn, asset, src)? {
+                added.push(asset.clone());
+            }
+        }
+        Ok(added)
+    }
+
     pub fn has_clipboard(&self) -> bool {
         self.clipboard.as_ref().is_some_and(|s| !s.roots.is_empty())
     }

@@ -20,7 +20,10 @@ file in the same pull request as the feature.
 ## Milestone 2 — Essential cards
 
 - [x] Rich-text notes (bold, italic, underline, strike, headings, lists, links, text sizes, colours)
+- [x] Note fonts: macOS fonts, five bundled Google Fonts (offline), or any installed font by name — per note, not per selection
+- [x] Colour swatches: from a hex code, `rgb()`, `hsl()` or a CSS colour name (or the macOS picker); click the code to copy it
 - [x] Images: dialog, Finder drop, clipboard paste, captions, aspect-locked resize, full-screen viewer with navigation
+- [x] Image toolbar with non-destructive colour adjustments (brightness, contrast, saturation, hue, black & white, sepia) — on the canvas, in the viewer and in print; Markdown/JSON exports keep the original file
 - [ ] Image cropping
 - [x] Files: any type, metadata, open with default app, reveal in Finder
 - [ ] Audio/video playback inside file cards (needs range requests in the asset protocol)
@@ -31,7 +34,8 @@ file in the same pull request as the feature.
 - [x] Nested boards: icons, colours, card counts, breadcrumbs, rename
 - [ ] Board shortcuts (alias cards)
 - [ ] Drag cards into boards and columns
-- [x] Clipboard: copy/cut/paste cards (deep, across boards), images, URLs, plain text
+- [x] Clipboard: copy/cut/paste cards (deep, across boards and projects), images, URLs, plain text
+- [x] Drag and drop from Finder, browsers (images, links) and other apps (text). Images a browser only offers as a URL become link cards: nothing is downloaded
 - [x] Toolbar drag-to-place
 
 ## Milestone 3 — Advanced workspace
@@ -40,8 +44,11 @@ file in the same pull request as the feature.
 - [x] Search (⌘K) across boards and cards
 - [x] Trash: restore, permanent deletion, undo deletion
 - [x] Export: Markdown, JSON; import: JSON; database backup and restore; daily auto-backup
+- [x] Print the current view (⌘P) without the interface or grid dots; Save as PDF from the macOS print dialog
+- [x] Projects: separate workspaces (`.milanopen` folders) opened side by side in their own windows (File ▸ New/Open Project), closed independently, with copy/paste between them (files included)
+- [ ] Recent projects list and Finder document integration (double-click a `.milanopen` folder to open it)
 - [ ] Lines and arrows between cards (stored and copied correctly; not drawn yet)
-- [ ] Sketches, tables, comments, colour swatches, documents (full-screen editor, word count)
+- [ ] Sketches, tables, comments, documents (full-screen editor, word count)
 - [ ] Labels and filters
 - [ ] Templates
 - [ ] Centralised task view across boards

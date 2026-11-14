@@ -192,6 +192,43 @@ impl AssetStore {
         Ok(asset)
     }
 
+    /// Register an asset copied from another store (same id, same bytes).
+    /// Returns false if this store already had it.
+    pub fn adopt(&self, conn: &Connection, asset: &Asset, src: &Path) -> Result<bool> {
+        if !is_asset_id(&asset.id) || clean_ext(&format!("x.{}", asset.ext)) != asset.ext {
+            return Err(Error::Invalid("not a valid asset".into()));
+        }
+        if self.get(conn, &asset.id)?.is_some() {
+            return Ok(false);
+        }
+        let dest = self.original_path(&asset.id, &asset.ext);
+        if !dest.exists() {
+            std::fs::create_dir_all(&self.tmp_dir)?;
+            std::fs::create_dir_all(dest.parent().expect("asset path has a parent"))?;
+            // Copy to a temporary file first so a crash never leaves a partial original.
+            let tmp = self.tmp_dir.join(format!("adopt-{}", new_id()));
+            if let Err(e) = std::fs::copy(src, &tmp).and_then(|_| std::fs::rename(&tmp, &dest)) {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(e.into());
+            }
+        }
+        conn.execute(
+            "INSERT OR IGNORE INTO assets (id, ext, mime, size, width, height, original_name, created_at) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                asset.id,
+                asset.ext,
+                asset.mime,
+                asset.size,
+                asset.width,
+                asset.height,
+                asset.original_name,
+                now_ms()
+            ],
+        )?;
+        Ok(true)
+    }
+
     pub fn get(&self, conn: &Connection, id: &str) -> Result<Option<Asset>> {
         Ok(conn
             .query_row(

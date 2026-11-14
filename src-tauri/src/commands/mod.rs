@@ -1,5 +1,6 @@
 //! IPC commands. Every command is `async` (so it never runs on the main
-//! thread) and delegates to `milano-core` through [`AppState::with`].
+//! thread) and delegates to `milano-core` through [`crate::state::Project::with`]
+//! on the project shown by the calling window.
 
 pub mod assets;
 pub mod boards;
@@ -31,6 +32,15 @@ pub(crate) async fn pick_files<R: Runtime>(
         d.pick_file(move |p| cb(p.map(|p| vec![p])));
     }
     rx.await.unwrap_or_default().into_iter().filter_map(|p| p.into_path().ok()).collect()
+}
+
+/// Show a native folder picker and wait for the answer.
+pub(crate) async fn pick_folder<R: Runtime>(app: &AppHandle<R>, title: &str) -> Option<std::path::PathBuf> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog().file().set_title(title).pick_folder(move |p| {
+        let _ = tx.send(p);
+    });
+    rx.await.ok().flatten().and_then(|p| p.into_path().ok())
 }
 
 /// Show a native "save" dialog and wait for the answer.

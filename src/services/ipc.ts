@@ -11,6 +11,7 @@ import type {
   IpcError,
   NewCard,
   Patch,
+  ProjectInfo,
   SearchResult,
   Settings,
   TrashEntry,
@@ -61,8 +62,6 @@ export const api = {
 
   pickAndImportFiles: (boardId: string, at: At, imagesOnly: boolean) =>
     call<ImportResult | null>('pick_and_import_files', { boardId, at, imagesOnly }),
-  importDroppedFiles: (boardId: string, paths: string[], at: At) =>
-    call<ImportResult>('import_dropped_files', { boardId, paths, at }),
   importClipboardFile: async (boardId: string, file: File, at: At) => {
     const bytes = new Uint8Array(await file.arrayBuffer());
     try {
@@ -94,4 +93,11 @@ export const api = {
   openDataFolder: () => call<void>('open_data_folder'),
   generateBenchmark: (boardId: string) => call<Patch>('generate_benchmark', { boardId }),
   readyToQuit: () => call<void>('ready_to_quit'),
+  readyToClose: () => call<void>('ready_to_close'),
+
+  projectInfo: () => call<ProjectInfo>('project_info'),
+  newProject: () => call<boolean>('new_project'),
+  openProject: () => call<boolean>('open_project'),
+  openLibrary: () => call<void>('open_library'),
+  printBoard: () => call<void>('print_board'),
 };

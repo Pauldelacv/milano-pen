@@ -1232,3 +1232,311 @@ kbd {
   padding: 24px;
   line-height: 1.5;
 }
+
+/* ---- Colour swatches ---------------------------------------------------------------- */
+
+.swatch-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+
+.swatch-block {
+  aspect-ratio: 1;
+  width: 100%;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.swatch-hex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: copy;
+}
+
+.swatch-hex svg {
+  color: var(--ink-faint);
+}
+
+.swatch-hex:hover {
+  background: var(--bg-hover);
+}
+
+.swatch-hex:hover svg {
+  color: var(--ink);
+}
+
+.swatch-edit {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+
+.swatch-edit .caption-input {
+  flex: 1;
+  min-width: 0;
+  border-top: 0;
+  font-family: var(--font-mono);
+}
+
+.caption-input.invalid {
+  color: var(--danger);
+}
+
+.swatch-picker {
+  flex: none;
+  width: 28px;
+  height: 24px;
+  margin-right: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.colour-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colour-row input:not([type='color']) {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+}
+
+.link-popover .swatch-picker {
+  height: 30px;
+  padding: 0;
+  border: 0;
+}
+
+.colour-preview {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+}
+
+/* ---- Card toolbars (image adjustments) ------------------------------------------------ */
+
+.card-toolbar {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 2;
+  margin-bottom: calc(8px / var(--zoom, 1));
+  transform: scale(calc(1 / var(--zoom, 1)));
+  transform-origin: bottom left;
+  padding: 3px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-float);
+  white-space: nowrap;
+  user-select: none;
+  cursor: default;
+}
+
+.card-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.card-toolbar .icon-button {
+  display: inline-flex;
+  gap: 5px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.card-toolbar .icon-button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.adjust-panel {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  width: 270px;
+  margin-left: calc(10px / var(--zoom, 1));
+  padding: 10px 10px 8px;
+  transform: scale(calc(1 / var(--zoom, 1)));
+  transform-origin: top left;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-float);
+  user-select: none;
+  cursor: default;
+}
+
+.adjust-row {
+  display: grid;
+  grid-template-columns: 86px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.adjust-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.adjust-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Fonts ------------------------------------------------------------------------- */
+
+.font-select {
+  height: 24px;
+  max-width: 180px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.font-select.compact {
+  max-width: 130px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.font-select.compact:hover {
+  background: var(--bg-hover);
+}
+
+.font-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-form input {
+  width: 160px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  font-size: 12px;
+}
+
+.menu-font {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.menu-font .font-select {
+  flex: 1;
+}
+
+/* ---- Projects --------------------------------------------------------------------- */
+
+.project-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  margin-right: 8px;
+  padding: 2px 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- Printing (File ▸ Print, ⌘P) ------------------------------------------------------
+ * Prints the view on screen, without the interface or the grid dots, scaled to
+ * fit a landscape page (actions.ts sets --print-scale and the view size). */
+
+@page {
+  size: landscape;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body,
+  #root,
+  .app {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  .topbar,
+  .toolbar,
+  .toasts,
+  .context-menu,
+  .link-popover,
+  .tool-ghost,
+  .marquee,
+  .empty-hint,
+  .resize-handle,
+  .card-toolbar,
+  .adjust-panel,
+  .format-bar,
+  .viewer,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .stage {
+    flex: none;
+    width: var(--print-width, 100%);
+    height: var(--print-height, 100vh);
+    zoom: var(--print-scale, 1);
+    background: transparent !important;
+    background-image: none !important;
+  }
+
+  .stage.drop-active::after {
+    display: none;
+  }
+
+  .card.selected,
+  .card.editing {
+    outline: none;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

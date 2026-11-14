@@ -5,6 +5,34 @@ All notable changes to Milano Pen. The format follows
 [Semantic Versioning](https://semver.org/). Pre-releases carry a suffix
 (`-beta.N`, `-rc.N`).
 
+## [Unreleased]
+
+### Added
+
+- **Projects** (#11): File ▸ New Project (⌥⌘N) / Open Project (⌘O) create or
+  open a separate workspace — a `.milanopen` folder with its own database,
+  files and backups — in its own window. Windows close independently, each
+  keeps its own undo history, and cards (with their images and files) can be
+  copied from one project and pasted into another. The default workspace is
+  now called the Library (File ▸ Open Library).
+- **Print** (#8): File ▸ Print (⌘P) prints the current view without the
+  interface or the grid dots, scaled to a landscape page; use “Save as PDF”
+  in the macOS print dialog to get a PDF.
+- **Colour swatches** (#10): the Colour tool adds a swatch from a hex code,
+  `rgb()`, `hsl()` or a colour name; click the code on the card to copy it.
+- **Note fonts** (#9): pick a font in the note editor or the context menu —
+  macOS fonts, five bundled Google Fonts (Inter, Lora, Playfair Display,
+  Caveat, JetBrains Mono; nothing is downloaded) or any font installed on
+  the Mac.
+- **Image adjustments** (#12): selecting an image shows a toolbar with
+  brightness, contrast, saturation, hue, black & white and sepia sliders.
+  Adjustments are non-destructive and undoable.
+
+### Fixed
+
+- Drag and drop from a browser did nothing (#7). Images, links and text can
+  now be dropped from browsers and other apps, as well as files from Finder.
+
 ## [0.1.0-beta.1] — 2026-11-14
 
 First public beta. Expect rough edges, and back up your data

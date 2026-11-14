@@ -7,6 +7,7 @@ import { FileCard } from './FileCard';
 import { ImageCard } from './ImageCard';
 import { LinkCard } from './LinkCard';
 import { NoteCard } from './NoteCard';
+import { SwatchCard } from './SwatchCard';
 import { UnsupportedCard } from './UnsupportedCard';
 
 export interface CardProps {
@@ -21,6 +22,7 @@ const REGISTRY: Partial<Record<CardKind, ComponentType<CardProps>>> = {
   file: FileCard,
   link: LinkCard,
   board: BoardCard,
+  swatch: SwatchCard,
 };
 
 export function cardComponent(kind: CardKind): ComponentType<CardProps> {

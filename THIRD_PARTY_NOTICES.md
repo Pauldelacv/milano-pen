@@ -42,6 +42,14 @@ Rust crates and npm packages keep their own licenses (MIT, Apache-2.0 and
 compatible permissive licenses); see `Cargo.lock` and `package-lock.json`.
 Icons are from [Lucide](https://lucide.dev) (ISC).
 
+### Bundled fonts
+
+The note fonts Inter, Lora, Playfair Display, Caveat and JetBrains Mono are
+bundled from [Fontsource](https://fontsource.org) (`@fontsource/*` packages)
+and are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org);
+each package's `LICENSE` file names its copyright holders. They are served
+from the app bundle and never downloaded at run time.
+
 Milano Pen is an independent project. It is not affiliated with or endorsed by
 Milanote, Miro or Milaclone. Milanote is a trademark of its owner and is
 mentioned only to describe the kind of tool Milano Pen is.
