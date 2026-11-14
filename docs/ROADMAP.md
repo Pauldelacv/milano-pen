@@ -65,4 +65,5 @@ file in the same pull request as the feature.
 - [x] CI (frontend, Rust, macOS arm64 + x64 builds), security audit, Dependabot
 - [x] Release workflow: DMGs for both architectures, checksums, draft release, optional signing/notarization
 - [ ] Apple Developer ID signing and notarization configured (needs the maintainers' Apple account)
+- [~] First beta `v0.1.0-beta.1` — version, changelog and pre-release workflow ready; the tag still has to be pushed from `main` and the draft release published
 - [ ] First stable release

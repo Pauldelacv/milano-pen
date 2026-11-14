@@ -173,6 +173,11 @@ jobs:
             echo "| Apple Silicon (M1 and later) | \`Milano-Pen_${GITHUB_REF_NAME#v}_arm64.dmg\` |"
             echo "| Intel | \`Milano-Pen_${GITHUB_REF_NAME#v}_x64.dmg\` |"
             echo
+            case "$GITHUB_REF_NAME" in *-*)
+              echo "> [!IMPORTANT]"
+              echo "> This is a **pre-release**. Back up your data (**File → Back Up Database…**) before upgrading, and see [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/CHANGELOG.md) for known limitations."
+              echo
+            esac
             if [ "$notarized" = "notarized=true" ]; then
               echo "These builds are signed with a Developer ID and notarized by Apple."
             elif [ "$signed" = "signed=true" ]; then
@@ -192,6 +197,10 @@ jobs:
       - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           draft: true
+          # A tag with a suffix (v0.1.0-beta.1, v1.0.0-rc.1) is a pre-release:
+          # flagged as such on GitHub and never marked "Latest".
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
           name: Milano Pen ${{ github.ref_name }}
           body_path: notes.md
           generate_release_notes: true
