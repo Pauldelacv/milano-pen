@@ -98,6 +98,9 @@ jobs:
           echo "notarized=$notarized" >> "$GITHUB_OUTPUT"
           echo "Code signing: $signed · Notarization: $notarized"
 
+      - name: Generate app icons from the SVG source
+        run: npm run icons:generate
+
       - name: Build app and DMG
         run: |
           if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
