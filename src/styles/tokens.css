@@ -1,0 +1,152 @@
+/*
+ * Design tokens. Every colour, radius, shadow and font in the UI comes from
+ * here, so the whole look can be redesigned without touching components.
+ */
+:root {
+  color-scheme: light;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --bg-app: #f3f3f1;
+  --bg-canvas: #f3f3f1;
+  --grid-dot: rgba(0, 0, 0, 0.07);
+  --bg-chrome: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --bg-active: rgba(0, 0, 0, 0.09);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-backdrop: rgba(30, 32, 38, 0.28);
+
+  --ink: #2b2d33;
+  --ink-soft: #5d616b;
+  --ink-faint: #9a9ea8;
+  --ink-inverse: #ffffff;
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --accent: #2f7bf5;
+  --accent-soft: rgba(47, 123, 245, 0.14);
+  --danger: #d6453d;
+  --selection: #2f7bf5;
+
+  --radius-card: 4px;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 18px 50px rgba(0, 0, 0, 0.22);
+
+  --topbar-height: 46px;
+  --traffic-lights: 12px;
+
+  /* Strong colours (board tiles, swatches). Milaclone's palette. */
+  --c-slate: #5b6475;
+  --c-gray: #8b8f97;
+  --c-teal: #2a9d8f;
+  --c-green: #4caf50;
+  --c-brown: #8d6e63;
+  --c-yellow: #e9b949;
+  --c-orange: #ef8a3c;
+  --c-red: #e05252;
+  --c-pink: #e06c9f;
+  --c-purple: #8e6bd8;
+  --c-blue: #3d84e0;
+  --c-indigo: #5a5fd6;
+
+  /* Card backgrounds for coloured notes. */
+  --card-slate: #e3e7ee;
+  --card-gray: #ececec;
+  --card-teal: #d6efec;
+  --card-green: #dff0d8;
+  --card-brown: #ece2dc;
+  --card-yellow: #fbf0c9;
+  --card-orange: #fde3cf;
+  --card-red: #f9dad9;
+  --card-pink: #f9dce9;
+  --card-purple: #e9e0f8;
+  --card-blue: #dce9fa;
+  --card-indigo: #e0e1f8;
+}
+
+[data-platform='mac'] {
+  --traffic-lights: 84px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg-app: #1d1e22;
+    --bg-canvas: #1d1e22;
+    --grid-dot: rgba(255, 255, 255, 0.06);
+    --bg-chrome: #26272c;
+    --bg-elevated: #2c2d33;
+    --bg-hover: rgba(255, 255, 255, 0.07);
+    --bg-active: rgba(255, 255, 255, 0.12);
+    --bg-card: #2b2c32;
+    --bg-input: #1f2024;
+    --bg-backdrop: rgba(0, 0, 0, 0.5);
+    --ink: #e8e9ec;
+    --ink-soft: #b2b5bd;
+    --ink-faint: #7c808a;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --accent: #5b9bff;
+    --accent-soft: rgba(91, 155, 255, 0.2);
+    --selection: #5b9bff;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
+    --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.45);
+    --card-slate: #343a46;
+    --card-gray: #3a3b3f;
+    --card-teal: #233f3c;
+    --card-green: #2b3d2a;
+    --card-brown: #3d332f;
+    --card-yellow: #453c21;
+    --card-orange: #46321f;
+    --card-red: #452727;
+    --card-pink: #45283a;
+    --card-purple: #362c49;
+    --card-blue: #253549;
+    --card-indigo: #2c2d4c;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-app: #1d1e22;
+  --bg-canvas: #1d1e22;
+  --grid-dot: rgba(255, 255, 255, 0.06);
+  --bg-chrome: #26272c;
+  --bg-elevated: #2c2d33;
+  --bg-hover: rgba(255, 255, 255, 0.07);
+  --bg-active: rgba(255, 255, 255, 0.12);
+  --bg-card: #2b2c32;
+  --bg-input: #1f2024;
+  --bg-backdrop: rgba(0, 0, 0, 0.5);
+  --ink: #e8e9ec;
+  --ink-soft: #b2b5bd;
+  --ink-faint: #7c808a;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --accent: #5b9bff;
+  --accent-soft: rgba(91, 155, 255, 0.2);
+  --selection: #5b9bff;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --card-slate: #343a46;
+  --card-gray: #3a3b3f;
+  --card-teal: #233f3c;
+  --card-green: #2b3d2a;
+  --card-brown: #3d332f;
+  --card-yellow: #453c21;
+  --card-orange: #46321f;
+  --card-red: #452727;
+  --card-pink: #45283a;
+  --card-purple: #362c49;
+  --card-blue: #253549;
+  --card-indigo: #2c2d4c;
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Milano Pen",
+  "version": "0.1.0",
+  "identifier": "io.github.pauldelacv.milanopen",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Milano Pen",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 720,
+        "minHeight": 480,
+        "center": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' milano: http://milano.localhost data: blob:",
+        "media-src": "'self' milano: http://milano.localhost",
+        "font-src": "'self' data:",
+        "connect-src": "ipc: http://ipc.localhost milano: http://milano.localhost",
+        "frame-src": "https://www.youtube-nocookie.com https://player.vimeo.com https://open.spotify.com",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'"
+      },
+      "devCsp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "Productivity",
+    "copyright": "© 2026 Milano Pen contributors. MIT License.",
+    "shortDescription": "A local-first visual workspace",
+    "longDescription": "Milano Pen is a free, open-source visual workspace for notes, images, files, links and boards on an infinite canvas. Everything stays on your Mac.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "dmg": {
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 180, "y": 200 },
+        "applicationFolderPosition": { "x": 480, "y": 200 }
+      }
+    }
+  }
+}

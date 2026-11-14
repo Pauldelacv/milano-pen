@@ -1,0 +1,115 @@
+# Continuous integration. Every job must pass before a pull request can be
+# merged; the release workflow runs this same workflow before building.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'feature/**', 'fix/**', 'release/**', 'claude/**']
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # Linux packages Tauri needs to compile (WebKitGTK); macOS needs nothing extra.
+  LINUX_DEPS: libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev librsvg2-dev libayatana-appindicator3-dev
+
+jobs:
+  frontend:
+    name: Frontend · lint, types, tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Versions agree (package.json, tauri.conf.json, Cargo.toml)
+        run: npm run check:versions
+      - name: ESLint
+        run: npm run lint
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Unit tests (Vitest)
+        run: npm test
+      - name: Production build
+        run: npm run build
+
+  rust:
+    name: Rust · fmt, clippy, tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Tauri's Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends $LINUX_DEPS
+      - name: Install the toolchain from rust-toolchain.toml
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # tauri::generate_context! embeds the frontend; a stub is enough to lint and test Rust.
+      - name: Stub frontend build
+        run: mkdir -p dist && echo '<!doctype html><title>stub</title>' > dist/index.html
+      - name: cargo fmt
+        run: cargo fmt --all --check
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+      - name: cargo test
+        run: cargo test --workspace --locked
+
+  macos:
+    name: macOS app · ${{ matrix.arch }}
+    needs: [frontend, rust]
+    # Apple Silicon runner; the Intel build is cross-compiled on it.
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: arm64
+          - target: x86_64-apple-darwin
+            arch: x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install the toolchain and target
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ matrix.target }}
+      - name: Validate the Tauri configuration
+        run: npx tauri info
+      - name: Build Milano Pen.app (unsigned, ad-hoc signature)
+        run: npx tauri build --ci --target ${{ matrix.target }} --bundles app --config '{"bundle":{"macOS":{"signingIdentity":"-"}}}'
+      - name: Check the binary architecture
+        run: |
+          bin="target/${{ matrix.target }}/release/bundle/macos/Milano Pen.app/Contents/MacOS/milano-pen"
+          file "$bin"
+          lipo -archs "$bin" | grep -q "${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'x86_64' }}"
+      - name: Zip the app
+        run: |
+          cd "target/${{ matrix.target }}/release/bundle/macos"
+          ditto -c -k --sequesterRsrc --keepParent "Milano Pen.app" "$GITHUB_WORKSPACE/Milano-Pen-${{ matrix.arch }}.app.zip"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: milano-pen-${{ matrix.arch }}-app
+          path: Milano-Pen-${{ matrix.arch }}.app.zip
+          retention-days: 7
+          if-no-files-found: error

@@ -1,0 +1,19 @@
+# Build output
+/target/
+/dist/
+/src-tauri/gen/
+/src-tauri/target/
+node_modules/
+*.tsbuildinfo
+
+# Local data and logs
+*.log
+.DS_Store
+.env
+.env.*
+/.milano-dev-data/
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

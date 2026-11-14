@@ -1,0 +1,202 @@
+# Builds signed (when credentials are configured) macOS releases for Apple
+# Silicon and Intel from a version tag, and publishes them as a DRAFT GitHub
+# release. Nothing is published unless CI and both builds succeed.
+#
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# Optional repository secrets (see docs/RELEASING.md):
+#   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY  → code signing
+#   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID                                → notarization
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: Tag matches the app version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: node scripts/check-versions.mjs --tag "$GITHUB_REF_NAME"
+
+  build:
+    name: Build · ${{ matrix.arch }}
+    needs: [ci, version]
+    runs-on: macos-26
+    timeout-minutes: 90
+    strategy:
+      # One failed architecture fails the release: no partial publication.
+      fail-fast: true
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: arm64
+          - target: x86_64-apple-darwin
+            arch: x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install the toolchain and target
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: release-${{ matrix.target }}
+
+      # Signing and notarization are enabled only when every required secret
+      # exists. Values go to the environment of later steps only, masked.
+      - name: Configure signing (optional)
+        id: signing
+        env:
+          CERT: ${{ secrets.APPLE_CERTIFICATE }}
+          CERT_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          signed=false; notarized=false
+          if [ -n "$CERT" ] && [ -n "$CERT_PASSWORD" ] && [ -n "$IDENTITY" ]; then
+            signed=true
+            {
+              echo "APPLE_CERTIFICATE=$(printf '%s' "$CERT" | tr -d '\n\r ')"
+              echo "APPLE_CERTIFICATE_PASSWORD=$CERT_PASSWORD"
+              echo "APPLE_SIGNING_IDENTITY=$IDENTITY"
+            } >> "$GITHUB_ENV"
+            if [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+              notarized=true
+              {
+                echo "APPLE_ID=$APPLE_ID"
+                echo "APPLE_PASSWORD=$APPLE_PASSWORD"
+                echo "APPLE_TEAM_ID=$APPLE_TEAM_ID"
+              } >> "$GITHUB_ENV"
+            fi
+          fi
+          echo "signed=$signed" >> "$GITHUB_OUTPUT"
+          echo "notarized=$notarized" >> "$GITHUB_OUTPUT"
+          echo "Code signing: $signed · Notarization: $notarized"
+
+      - name: Build app and DMG
+        run: |
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            npx tauri build --ci --target ${{ matrix.target }} --bundles app,dmg
+          else
+            # No Developer ID: ad-hoc signature (required to run on Apple Silicon), not notarized.
+            npx tauri build --ci --target ${{ matrix.target }} --bundles app,dmg \
+              --config '{"bundle":{"macOS":{"signingIdentity":"-"}}}'
+          fi
+
+      - name: Verify signature and notarization
+        run: |
+          app="target/${{ matrix.target }}/release/bundle/macos/Milano Pen.app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv "$app" 2>&1 | tee codesign.txt
+          if [ "${{ steps.signing.outputs.notarized }}" = "true" ]; then
+            xcrun stapler validate "$app"
+            spctl --assess --type execute --verbose=2 "$app"
+          elif [ "${{ steps.signing.outputs.signed }}" = "false" ]; then
+            grep -q "Signature=adhoc" codesign.txt
+          fi
+
+      - name: Collect release files
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          out="$GITHUB_WORKSPACE/out"; mkdir -p "$out"
+          bundle="target/${{ matrix.target }}/release/bundle"
+          dmg=$(ls "$bundle"/dmg/*.dmg | head -n1)
+          cp "$dmg" "$out/Milano-Pen_${version}_${{ matrix.arch }}.dmg"
+          (cd "$bundle/macos" && ditto -c -k --sequesterRsrc --keepParent "Milano Pen.app" "$out/Milano-Pen_${version}_${{ matrix.arch }}.app.zip")
+          printf 'signed=%s\nnotarized=%s\n' "${{ steps.signing.outputs.signed }}" "${{ steps.signing.outputs.notarized }}" > "$out/signing-${{ matrix.arch }}.txt"
+          ls -la "$out"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ matrix.arch }}
+          path: out/*
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    name: Draft GitHub release
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: release-*
+          path: out
+          merge-multiple: true
+      - name: Check every file is present
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          for f in "Milano-Pen_${v}_arm64.dmg" "Milano-Pen_${v}_x64.dmg" "Milano-Pen_${v}_arm64.app.zip" "Milano-Pen_${v}_x64.app.zip"; do
+            test -s "out/$f" || { echo "missing $f"; exit 1; }
+          done
+      - name: Checksums and release notes
+        run: |
+          cd out
+          signed=$(grep -h '^signed=' signing-*.txt | sort -u)
+          notarized=$(grep -h '^notarized=' signing-*.txt | sort -u)
+          rm signing-*.txt
+          sha256sum *.dmg *.zip > SHA256SUMS.txt
+          {
+            echo "## Download"
+            echo
+            echo "| Mac | File |"
+            echo "| --- | --- |"
+            echo "| Apple Silicon (M1 and later) | \`Milano-Pen_${GITHUB_REF_NAME#v}_arm64.dmg\` |"
+            echo "| Intel | \`Milano-Pen_${GITHUB_REF_NAME#v}_x64.dmg\` |"
+            echo
+            if [ "$notarized" = "notarized=true" ]; then
+              echo "These builds are signed with a Developer ID and notarized by Apple."
+            elif [ "$signed" = "signed=true" ]; then
+              echo "> [!WARNING]"
+              echo "> These builds are signed but **not notarized**. macOS will warn the first time you open the app: right-click it and choose **Open**."
+            else
+              echo "> [!WARNING]"
+              echo "> These builds are **not signed with a Developer ID and not notarized**. macOS Gatekeeper will block the first launch."
+              echo "> After moving the app to Applications, right-click it and choose **Open**, or allow it under"
+              echo "> **System Settings → Privacy & Security → Open Anyway**. See the README for details."
+            fi
+            echo
+            echo "Verify a download with \`shasum -a 256 -c SHA256SUMS.txt\`."
+            echo
+          } > ../notes.md
+          cat ../notes.md
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          draft: true
+          name: Milano Pen ${{ github.ref_name }}
+          body_path: notes.md
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            out/*.dmg
+            out/*.app.zip
+            out/SHA256SUMS.txt
