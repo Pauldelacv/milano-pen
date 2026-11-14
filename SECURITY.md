@@ -23,7 +23,8 @@ prefer otherwise.
 
 - The webview has no filesystem, shell or dialog permissions (see
   `src-tauri/capabilities/default.json`). Files are imported, exported and
-  opened only through Rust commands, after a native dialog or a Finder drop.
+  opened only through Rust commands, after a native dialog; pasted and dropped
+  files reach Rust as bytes, never as paths.
 - Imported files are served to the webview by a read-only `milano://`
   protocol that resolves only content hashes inside the asset folders.
 - A strict Content-Security-Policy (`src-tauri/tauri.conf.json`) limits

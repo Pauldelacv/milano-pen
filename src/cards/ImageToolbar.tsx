@@ -21,46 +21,54 @@ export function ImageToolbar({ cardId, adjust }: { cardId: string; adjust: Image
     const next: ImageAdjust = { ...(adjust ?? {}), [key]: value };
     setAdjust(cardId, isNeutral(next) ? null : next);
   };
+  const stop = {
+    'data-no-drag': true,
+    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+    onDoubleClick: (e: React.MouseEvent) => e.stopPropagation(),
+  };
   return (
-    <div
-      className="card-toolbar image-toolbar"
-      data-no-drag
-      onPointerDown={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
-    >
-      <div className="card-toolbar-row">
-        <button className={`icon-button${open ? ' active' : ''}`} title="Adjust colours" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          <SlidersHorizontal size={14} />
-          <span>Adjust</span>
-        </button>
-        <button
-          className="icon-button"
-          title="Caption"
-          onClick={() => {
-            useUiStore.getState().select([cardId]);
-            useUiStore.getState().setEditing(cardId);
-          }}
-        >
-          <MessageSquareText size={14} />
-        </button>
-        <button className="icon-button" title="View full size" onClick={() => void activateCard(cardId)}>
-          <Expand size={14} />
-        </button>
-        {!isNeutral(adjust) && (
+    <>
+      <div className="card-toolbar image-toolbar" {...stop}>
+        <div className="card-toolbar-row">
+          <button
+            className={`icon-button${open ? ' active' : ''}`}
+            title="Adjust colours"
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+          >
+            <SlidersHorizontal size={14} />
+            <span>Adjust</span>
+          </button>
           <button
             className="icon-button"
-            title="Reset adjustments"
+            title="Caption"
             onClick={() => {
-              setAdjust(cardId, null);
-              void saveQueue.flush();
+              useUiStore.getState().select([cardId]);
+              useUiStore.getState().setEditing(cardId);
             }}
           >
-            <RotateCcw size={14} />
+            <MessageSquareText size={14} />
           </button>
-        )}
+          <button className="icon-button" title="View full size" onClick={() => void activateCard(cardId)}>
+            <Expand size={14} />
+          </button>
+          {!isNeutral(adjust) && (
+            <button
+              className="icon-button"
+              title="Reset adjustments"
+              onClick={() => {
+                setAdjust(cardId, null);
+                void saveQueue.flush();
+              }}
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+        </div>
       </div>
+      {/* Beside the image, so the preview stays visible while adjusting. */}
       {open && (
-        <div className="adjust-panel">
+        <div className="adjust-panel" {...stop}>
           {ADJUST_CONTROLS.map((c) => {
             const v = adjustValue(adjust, c.key);
             return (
@@ -76,14 +84,12 @@ export function ImageToolbar({ cardId, adjust }: { cardId: string; adjust: Image
                   onPointerUp={() => void saveQueue.flush()}
                   onDoubleClick={() => change(c.key, c.neutral)}
                 />
-                <span className="adjust-value">
-                  {c.unit === '%' ? `${v}%` : `${v}°`}
-                </span>
+                <span className="adjust-value">{c.unit === '%' ? `${v}%` : `${v}°`}</span>
               </label>
             );
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }

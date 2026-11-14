@@ -1,31 +1,32 @@
 //! Importing files as cards. Paths are accepted only if the user picked them
-//! in a native dialog (here) or dropped them from Finder (recorded by the
-//! window event handler in `lib.rs`), never from arbitrary frontend input.
+//! in a native dialog (here), never from frontend input: pasted and dropped
+//! files arrive as bytes.
 
 use std::path::PathBuf;
 
 use tauri::ipc::{InvokeBody, Request};
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, State, Webview};
 use tauri_plugin_opener::OpenerExt;
 
 use milano_core::services::workspace::ImportResult;
 use milano_core::{Error, Result};
 
 use super::pick_files;
-use crate::state::AppState;
+use crate::state::{AppState, Project};
 
 const IMAGE_EXTS: &[&str] =
     &["png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "avif", "bmp", "tif", "tiff", "svg", "ico"];
 
-async fn import(state: &AppState, board_id: String, paths: Vec<PathBuf>, at: (f64, f64)) -> Result<ImportResult> {
-    let result = state.with(move |ws| ws.import_files(&board_id, &paths, at)).await?;
-    state.prefetch_thumbnails(result.assets.iter().filter(|a| a.is_image()).map(|a| a.id.clone()).collect());
+async fn import(project: &Project, board_id: String, paths: Vec<PathBuf>, at: (f64, f64)) -> Result<ImportResult> {
+    let result = project.with(move |ws| ws.import_files(&board_id, &paths, at)).await?;
+    project.prefetch_thumbnails(result.assets.iter().filter(|a| a.is_image()).map(|a| a.id.clone()).collect());
     Ok(result)
 }
 
 #[tauri::command]
 pub async fn pick_and_import_files(
     app: AppHandle,
+    webview: Webview,
     state: State<'_, AppState>,
     board_id: String,
     at: (f64, f64),
@@ -37,30 +38,19 @@ pub async fn pick_and_import_files(
     if paths.is_empty() {
         return Ok(None);
     }
-    import(&state, board_id, paths, at).await.map(Some)
-}
-
-#[tauri::command]
-pub async fn import_dropped_files(
-    state: State<'_, AppState>,
-    board_id: String,
-    paths: Vec<PathBuf>,
-    at: (f64, f64),
-) -> Result<ImportResult> {
-    let allowed: Vec<PathBuf> = {
-        let mut granted = state.granted_paths.lock().map_err(|_| Error::Conflict("busy".into()))?;
-        paths.into_iter().filter(|p| granted.remove(p)).collect()
-    };
-    if allowed.is_empty() {
-        return Err(Error::Invalid("those files were not dropped on the window".into()));
-    }
-    import(&state, board_id, allowed, at).await
+    import(&*state.project(webview.label())?, board_id, paths, at).await.map(Some)
 }
 
 /// Raw bytes from the clipboard (pasted screenshots, copied images). The body
 /// is the file content; the name and position travel in headers.
+/// Also used for drag and drop: the webview hands over the dropped files' bytes.
 #[tauri::command]
-pub async fn import_clipboard_file(state: State<'_, AppState>, request: Request<'_>) -> Result<ImportResult> {
+pub async fn import_clipboard_file(
+    webview: Webview,
+    state: State<'_, AppState>,
+    request: Request<'_>,
+) -> Result<ImportResult> {
+    let project = state.project(webview.label())?;
     let InvokeBody::Raw(bytes) = request.body() else {
         return Err(Error::Invalid("expected raw file bytes".into()));
     };
@@ -70,8 +60,8 @@ pub async fn import_clipboard_file(state: State<'_, AppState>, request: Request<
     let x = header("x-at-x").and_then(|v| v.parse().ok()).unwrap_or(0.0);
     let y = header("x-at-y").and_then(|v| v.parse().ok()).unwrap_or(0.0);
     let bytes = bytes.clone();
-    let result = state.with(move |ws| ws.import_bytes(&board_id, &name, &bytes, (x, y))).await?;
-    state.prefetch_thumbnails(result.assets.iter().filter(|a| a.is_image()).map(|a| a.id.clone()).collect());
+    let result = project.with(move |ws| ws.import_bytes(&board_id, &name, &bytes, (x, y))).await?;
+    project.prefetch_thumbnails(result.assets.iter().filter(|a| a.is_image()).map(|a| a.id.clone()).collect());
     Ok(result)
 }
 
@@ -84,14 +74,27 @@ fn percent_decode(s: &str) -> String {
 
 /// Open an imported file with its default macOS application.
 #[tauri::command]
-pub async fn open_asset(app: AppHandle, state: State<'_, AppState>, asset_id: String) -> Result<()> {
-    let path = state.thumbnails.original_path(&asset_id).ok_or_else(|| Error::NotFound("file".into()))?;
+pub async fn open_asset(app: AppHandle, webview: Webview, state: State<'_, AppState>, asset_id: String) -> Result<()> {
+    let path = state
+        .project(webview.label())?
+        .thumbnails
+        .original_path(&asset_id)
+        .ok_or_else(|| Error::NotFound("file".into()))?;
     app.opener().open_path(path.to_string_lossy(), None::<&str>).map_err(|e| Error::Invalid(e.to_string()))
 }
 
 /// Show an imported file in Finder.
 #[tauri::command]
-pub async fn reveal_asset(app: AppHandle, state: State<'_, AppState>, asset_id: String) -> Result<()> {
-    let path = state.thumbnails.original_path(&asset_id).ok_or_else(|| Error::NotFound("file".into()))?;
+pub async fn reveal_asset(
+    app: AppHandle,
+    webview: Webview,
+    state: State<'_, AppState>,
+    asset_id: String,
+) -> Result<()> {
+    let path = state
+        .project(webview.label())?
+        .thumbnails
+        .original_path(&asset_id)
+        .ok_or_else(|| Error::NotFound("file".into()))?;
     app.opener().reveal_item_in_dir(path).map_err(|e| Error::Invalid(e.to_string()))
 }

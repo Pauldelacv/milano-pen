@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { HistoryState, Settings } from '../types/models';
+import type { HistoryState, ProjectInfo, Settings } from '../types/models';
 
 export type DialogName = 'search' | 'trash' | 'settings' | 'shortcuts' | null;
 
@@ -39,6 +39,9 @@ interface UiState {
   saving: boolean;
   /** Image card shown in the full-screen viewer. */
   viewerId: string | null;
+  /** The project this window shows. */
+  project: ProjectInfo | null;
+  setProject: (p: ProjectInfo) => void;
   setViewer: (id: string | null) => void;
   select: (ids: string[], additive?: boolean) => void;
   toggle: (id: string) => void;
@@ -67,6 +70,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   dropActive: false,
   saving: false,
   viewerId: null,
+  project: null,
+  setProject: (project) => set({ project }),
   setViewer: (viewerId) => set({ viewerId, contextMenu: null }),
 
   select: (ids, additive = false) =>

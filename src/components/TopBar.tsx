@@ -1,4 +1,4 @@
-import { ChevronRight, Minus, Plus, Redo2, Search, Settings, Trash2, Undo2 } from 'lucide-react';
+import { ChevronRight, FolderOpen, Minus, Plus, Redo2, Search, Settings, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { applyPatch, openBoard, redo, run, undo, zoomIn, zoomOut, zoomReset } from '../app/actions';
 import { useZoom } from '../canvas/cameraController';
@@ -52,8 +52,15 @@ export function TopBar() {
   const saving = useUiStore((s) => s.saving);
   const setDialog = useUiStore((s) => s.setDialog);
   const scale = useZoom((s) => s.scale);
+  const project = useUiStore((s) => s.project);
   return (
     <header className="topbar" data-tauri-drag-region>
+      {project && !project.isLibrary && (
+        <span className="project-chip" title={project.path}>
+          <FolderOpen size={13} />
+          {project.name}
+        </span>
+      )}
       <nav className="crumbs" aria-label="Boards">
         {crumbs.map((c, i) => {
           const last = i === crumbs.length - 1;

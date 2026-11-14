@@ -9,6 +9,7 @@ import { pointerOrCenterWorld, stageRect, viewportCenterWorld } from '../canvas/
 import { parseColor } from '../cards/colorParse';
 import { isUrl } from '../cards/embeds';
 import { textToDoc } from '../editors/richText';
+import { dataUrlToFile, readDrop, type DataTransferLike } from '../services/dropData';
 import { api, BackendError } from '../services/ipc';
 import { SaveQueue } from '../services/saveQueue';
 import { setDataPinnedPredicate, useBoardStore } from '../stores/boardStore';
@@ -61,7 +62,11 @@ setDataPinnedPredicate((id) => saveQueue.isPending(id));
 
 // ---- Navigation --------------------------------------------------------------
 
-const LAST_BOARD_KEY = 'milano-pen:last-board';
+/** Remembered per project: every window shares this origin's localStorage. */
+function lastBoardKey(): string {
+  const p = ui().project;
+  return !p || p.isLibrary ? 'milano-pen:last-board' : `milano-pen:last-board:${p.path}`;
+}
 
 async function reloadBoard(id: string): Promise<void> {
   const view = await run(api.openBoard(id));
@@ -78,7 +83,7 @@ export async function openBoard(id: string): Promise<boolean> {
   board().load(view);
   switchBoardCamera(id);
   try {
-    localStorage.setItem(LAST_BOARD_KEY, id);
+    localStorage.setItem(lastBoardKey(), id);
   } catch {
     /* not remembered */
   }
@@ -88,7 +93,7 @@ export async function openBoard(id: string): Promise<boolean> {
 export async function openInitialBoard(): Promise<void> {
   let last: string | null = null;
   try {
-    last = localStorage.getItem(LAST_BOARD_KEY);
+    last = localStorage.getItem(lastBoardKey());
   } catch {
     last = null;
   }
@@ -197,12 +202,6 @@ export async function addFiles(imagesOnly: boolean, at?: { x: number; y: number 
   reportImport(await run(api.pickAndImportFiles(boardId, [p.x, p.y], imagesOnly)));
 }
 
-export async function importDropped(paths: string[], at: { x: number; y: number }) {
-  const boardId = board().boardId;
-  if (!boardId || !paths.length) return;
-  reportImport(await run(api.importDroppedFiles(boardId, paths, [at.x, at.y])));
-}
-
 export async function importClipboardFiles(files: File[], at: { x: number; y: number }) {
   const boardId = board().boardId;
   if (!boardId) return;
@@ -211,6 +210,27 @@ export async function importClipboardFiles(files: File[], at: { x: number; y: nu
     reportImport(await run(api.importClipboardFile(boardId, f, [x, at.y])));
     x += 300;
   }
+}
+
+/**
+ * A drop from Finder, a browser or another app: files (including images
+ * dragged out of a web page), inline images, links, then plain text.
+ * Nothing is downloaded: a link without a file becomes a link card.
+ */
+export async function importDrop(dt: DataTransferLike, at: { x: number; y: number }) {
+  const drop = readDrop(dt);
+  if (drop.files.length) return importClipboardFiles(drop.files, at);
+  const inline = drop.dataImages.map((u, i) => dataUrlToFile(u, `dropped-${i + 1}`)).filter((f): f is File => !!f);
+  if (inline.length) return importClipboardFiles(inline, at);
+  if (drop.urls.length) {
+    let y = at.y;
+    for (const url of drop.urls.slice(0, 50)) {
+      await addLink(url, { x: Math.round(at.x - 140), y: Math.round(y - 30) });
+      y += 90;
+    }
+    return;
+  }
+  if (drop.text.trim()) return addTextAsNote(drop.text, { x: Math.round(at.x - 120), y: Math.round(at.y - 20) });
 }
 
 // ---- Editing the selection ---------------------------------------------------
@@ -426,6 +446,44 @@ export async function generateBenchmark() {
   if (patch) {
     applyPatch(patch, { select: true });
     ui().toast('Benchmark board ready. Open it to test performance.');
+  }
+}
+
+// ---- Projects and printing -------------------------------------------------------
+
+export const newProject = () => run(api.newProject());
+export const openProject = () => run(api.openProject());
+export const openLibrary = () => run(api.openLibrary());
+
+/** Usable area of a landscape A4 or US Letter page (1 cm margins), in CSS px. */
+const PRINT_PAGE = { w: 979, h: 718 };
+
+/** Print the current view (File ▸ Print, ⌘P). The print stylesheet hides the
+ * interface and the grid dots and scales the view to fit the page; the macOS
+ * dialog can print it or save it as PDF. */
+export async function printBoard() {
+  await saveQueue.flush();
+  ui().setEditing(null);
+  ui().clearSelection();
+  ui().setContextMenu(null);
+  const r = stageRect();
+  const scale = Math.min(1, PRINT_PAGE.w / r.width, PRINT_PAGE.h / r.height);
+  const root = document.documentElement;
+  root.style.setProperty('--print-scale', String(scale));
+  root.style.setProperty('--print-width', `${r.width}px`);
+  root.style.setProperty('--print-height', `${r.height}px`);
+  const title = document.title;
+  document.title = board().board?.title || title;
+  // Let React drop the selection outlines before the page is captured.
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  try {
+    await api.printBoard();
+  } catch (e) {
+    // Outside the app shell (or if the native dialog is unavailable).
+    if (typeof window.print === 'function') window.print();
+    else reportError(e);
+  } finally {
+    document.title = title;
   }
 }
 

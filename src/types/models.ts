@@ -143,6 +143,13 @@ export interface AppInfo {
   platform: string;
 }
 
+export interface ProjectInfo {
+  name: string;
+  path: string;
+  /** The default workspace in Application Support (vs a project folder). */
+  isLibrary: boolean;
+}
+
 export interface IpcError {
   kind: string;
   message: string;

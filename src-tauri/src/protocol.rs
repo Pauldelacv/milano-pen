@@ -21,6 +21,8 @@ fn error(status: StatusCode, msg: &str) -> Response<Vec<u8>> {
 
 pub fn handle<R: Runtime>(ctx: UriSchemeContext<'_, R>, request: Request<Vec<u8>>, responder: UriSchemeResponder) {
     let app = ctx.app_handle().clone();
+    // Each window serves the assets of the project it shows.
+    let label = ctx.webview_label().to_string();
     let path = request.uri().path().to_string();
     tauri::async_runtime::spawn(async move {
         let parts: Vec<&str> = path.trim_start_matches('/').split('/').collect();
@@ -31,8 +33,10 @@ pub fn handle<R: Runtime>(ctx: UriSchemeContext<'_, R>, request: Request<Vec<u8>
             },
             _ => return responder.respond(error(StatusCode::NOT_FOUND, "not found")),
         };
-        let state = app.state::<AppState>();
-        let response = match state.thumbnails.load(&id, variant).await {
+        let Ok(project) = app.state::<AppState>().project(&label) else {
+            return responder.respond(error(StatusCode::NOT_FOUND, "no project"));
+        };
+        let response = match project.thumbnails.load(&id, variant).await {
             Ok((bytes, mime)) => Response::builder()
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, mime)

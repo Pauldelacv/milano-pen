@@ -1,41 +1,49 @@
 //! Exports, imports and backups through native dialogs.
 
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, EventTarget, State, Webview};
 
 use milano_core::models::Patch;
 use milano_core::{Error, Result};
 
 use super::{pick_files, pick_save, safe_file_name};
-use crate::state::AppState;
+use crate::state::{AppState, Project};
 
-async fn board_title(state: &AppState, board_id: &str) -> Result<String> {
+async fn board_title(project: &Project, board_id: &str) -> Result<String> {
     let id = board_id.to_string();
-    state.with(move |ws| Ok(ws.open_board(&id)?.board.title)).await
+    project.with(move |ws| Ok(ws.open_board(&id)?.board.title)).await
 }
 
 /// Returns the written path, or None if the user cancelled.
 #[tauri::command]
 pub async fn export_board_markdown(
     app: AppHandle,
+    webview: Webview,
     state: State<'_, AppState>,
     board_id: String,
 ) -> Result<Option<String>> {
-    let name = format!("{}.md", safe_file_name(&board_title(&state, &board_id).await?, "board"));
+    let project = state.project(webview.label())?;
+    let name = format!("{}.md", safe_file_name(&board_title(&project, &board_id).await?, "board"));
     let Some(dest) = pick_save(&app, "Export board as Markdown", &name, ("Markdown", &["md"])).await else {
         return Ok(None);
     };
-    let md = state.with(move |ws| ws.export_markdown(&board_id)).await?;
+    let md = project.with(move |ws| ws.export_markdown(&board_id)).await?;
     tokio::fs::write(&dest, md).await?;
     Ok(Some(dest.to_string_lossy().into()))
 }
 
 #[tauri::command]
-pub async fn export_board_json(app: AppHandle, state: State<'_, AppState>, board_id: String) -> Result<Option<String>> {
-    let name = format!("{}.milanopen.json", safe_file_name(&board_title(&state, &board_id).await?, "board"));
+pub async fn export_board_json(
+    app: AppHandle,
+    webview: Webview,
+    state: State<'_, AppState>,
+    board_id: String,
+) -> Result<Option<String>> {
+    let project = state.project(webview.label())?;
+    let name = format!("{}.milanopen.json", safe_file_name(&board_title(&project, &board_id).await?, "board"));
     let Some(dest) = pick_save(&app, "Export board as JSON", &name, ("JSON", &["json"])).await else {
         return Ok(None);
     };
-    let json = state.with(move |ws| ws.export_json(&board_id)).await?;
+    let json = project.with(move |ws| ws.export_json(&board_id)).await?;
     tokio::fs::write(&dest, json).await?;
     Ok(Some(dest.to_string_lossy().into()))
 }
@@ -43,6 +51,7 @@ pub async fn export_board_json(app: AppHandle, state: State<'_, AppState>, board
 #[tauri::command]
 pub async fn import_board_json(
     app: AppHandle,
+    webview: Webview,
     state: State<'_, AppState>,
     board_id: String,
     at: (f64, f64),
@@ -55,30 +64,32 @@ pub async fn import_board_json(
         return Err(Error::Invalid("that file is too large to be a board export".into()));
     }
     let json = tokio::fs::read_to_string(&src).await?;
-    state.with(move |ws| ws.import_json(&board_id, &json, at)).await.map(Some)
+    state.project(webview.label())?.with(move |ws| ws.import_json(&board_id, &json, at)).await.map(Some)
 }
 
 #[tauri::command]
-pub async fn backup_database(app: AppHandle, state: State<'_, AppState>) -> Result<Option<String>> {
-    let name = format!("Milano Pen backup {}.sqlite", chrono_like_today());
+pub async fn backup_database(app: AppHandle, webview: Webview, state: State<'_, AppState>) -> Result<Option<String>> {
+    let project = state.project(webview.label())?;
+    let name = format!("{} backup {}.sqlite", safe_file_name(&project.name, "Milano Pen"), chrono_like_today());
     let Some(dest) = pick_save(&app, "Back up database", &name, ("SQLite database", &["sqlite"])).await else {
         return Ok(None);
     };
     let d = dest.clone();
-    state.with(move |ws| ws.backup_to(&d)).await?;
+    project.with(move |ws| ws.backup_to(&d)).await?;
     Ok(Some(dest.to_string_lossy().into()))
 }
 
 /// Replace the database with a backup, then tell the webview to reload.
 #[tauri::command]
-pub async fn restore_database(app: AppHandle, state: State<'_, AppState>) -> Result<bool> {
+pub async fn restore_database(app: AppHandle, webview: Webview, state: State<'_, AppState>) -> Result<bool> {
+    let project = state.project(webview.label())?;
     let Some(src) =
         pick_files(&app, "Restore from backup", &[("SQLite database", &["sqlite", "db"])], false).await.pop()
     else {
         return Ok(false);
     };
-    state.with(move |ws| ws.restore_backup(&src)).await?;
-    let _ = app.emit("workspace-replaced", ());
+    project.with(move |ws| ws.restore_backup(&src)).await?;
+    let _ = app.emit_to(EventTarget::webview_window(webview.label()), "workspace-replaced", ());
     Ok(true)
 }
 

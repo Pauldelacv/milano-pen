@@ -1367,12 +1367,23 @@ kbd {
 }
 
 .adjust-panel {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  z-index: 2;
   display: grid;
   gap: 4px;
-  width: 260px;
-  padding: 8px 6px 4px;
-  border-top: 1px solid var(--border);
-  margin-top: 3px;
+  width: 270px;
+  margin-left: calc(10px / var(--zoom, 1));
+  padding: 10px 10px 8px;
+  transform: scale(calc(1 / var(--zoom, 1)));
+  transform-origin: top left;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-float);
+  user-select: none;
+  cursor: default;
 }
 
 .adjust-row {
@@ -1444,4 +1455,88 @@ kbd {
 
 .menu-font .font-select {
   flex: 1;
+}
+
+/* ---- Projects --------------------------------------------------------------------- */
+
+.project-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  margin-right: 8px;
+  padding: 2px 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- Printing (File ▸ Print, ⌘P) ------------------------------------------------------
+ * Prints the view on screen, without the interface or the grid dots, scaled to
+ * fit a landscape page (actions.ts sets --print-scale and the view size). */
+
+@page {
+  size: landscape;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body,
+  #root,
+  .app {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  .topbar,
+  .toolbar,
+  .toasts,
+  .context-menu,
+  .link-popover,
+  .tool-ghost,
+  .marquee,
+  .empty-hint,
+  .resize-handle,
+  .card-toolbar,
+  .adjust-panel,
+  .format-bar,
+  .viewer,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .stage {
+    flex: none;
+    width: var(--print-width, 100%);
+    height: var(--print-height, 100vh);
+    zoom: var(--print-scale, 1);
+    background: transparent !important;
+    background-image: none !important;
+  }
+
+  .stage.drop-active::after {
+    display: none;
+  }
+
+  .card.selected,
+  .card.editing {
+    outline: none;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

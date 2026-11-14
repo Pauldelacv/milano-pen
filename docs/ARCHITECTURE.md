@@ -66,6 +66,8 @@ crates/milano-core/src/
   images/     dimensions, EXIF orientation, thumbnails, byte-bounded LRU
 src-tauri/src/
   commands/   one file per domain, all `async`
+  state.rs    open projects, window → project map, shared clipboard
+  windows.rs  project windows, close/quit flush handshakes
   menu.rs     native macOS menu bar
   protocol.rs milano:// asset protocol
 src/          React app (app/, canvas/, cards/, editors/, stores/, services/, styles/, types/)
@@ -136,7 +138,7 @@ debounced (400 ms) and flushed on blur, board switch, window blur and app quit
 
 ## 6. Asset & image pipeline
 
-1. Import (dialog, Finder drop, clipboard): Rust streams the file into
+1. Import (dialog, drag and drop, clipboard): Rust streams the file into
    `assets/<aa>/<sha256>.<ext>` (content-addressed → deduplicated, originals
    never modified) and reads only the header for dimensions + EXIF orientation.
    The card is created immediately with the aspect ratio known.
@@ -162,13 +164,43 @@ debounced (400 ms) and flushed on blur, board switch, window blur and app quit
   app's own commands. No `fs` plugin, no shell. External links open through a
   Rust command that accepts only `http(s)`/`mailto` URLs.
 * File paths are never trusted from the frontend: import commands accept only
-  paths the user picked in a native dialog or dropped from Finder (recorded by
-  Rust from the window event).
+  paths the user picked in a native dialog. Drag and drop is handled by the
+  webview (Tauri's native drop handler is disabled, because it swallowed
+  browser drags): dropped and pasted files reach Rust as bytes. Images a
+  browser offers only as a URL become link cards — nothing is downloaded.
 * CSP restricts scripts to the bundle, images to `self`/`milano:`/`data:`/`blob:`,
   frames to the YouTube-nocookie/Vimeo/Spotify embed hosts. Link previews are
   never fetched automatically.
 
-## 8. Data location
+## 8. Windows and projects
+
+* A **project** is a workspace folder — `Name.milanopen/` with the layout of
+  §10 (database, assets, thumbnails, backups) — so it can be moved, copied or
+  backed up as one item. The **Library** is the default workspace in
+  Application Support, shown by the `main` window; it also stores the app
+  settings (theme, snapping…), which apply to every window.
+* Each window shows one project. `AppState` maps window label → `Project`
+  (its `Workspace`, thumbnailer and paths); every command resolves the
+  project from the calling webview, and the `milano://` protocol from the
+  requesting webview's label, so a window can only reach its own data. A
+  project open in one window is focused rather than opened twice.
+* Undo history is per project (it lives in its `Workspace`).
+* The clipboard is app-wide: copying stores a snapshot plus the source
+  project; pasting into another project first copies the referenced asset
+  originals and rows (`Workspace::snapshot_assets` / `adopt_assets`), then
+  pastes the snapshot.
+* Events from Rust are sent to one window (`emit_to`), and the webview
+  listens on its own window only, so menus, flush requests and restores never
+  leak between windows. Closing a window asks its webview to flush (with a
+  timeout) before it closes; quitting does the same for every window.
+
+## 9. Printing
+
+⌘P calls `Webview::print` (the macOS print dialog, which also saves PDF).
+A print stylesheet hides the interface, selection and grid dots and scales
+the current view to fit a landscape page; the frontend computes the scale.
+
+## 10. Data location
 
 `~/Library/Application Support/Milano Pen/` (resolved with Tauri's
 `app_data_dir` for the `productName`; on other OSes the platform equivalent):
@@ -181,7 +213,9 @@ cache/        disposable
 backups/      automatic daily VACUUM INTO snapshots (last 10 kept) + pre-migration copies
 ```
 
-## 9. Future-proofing (not implemented)
+Projects use the same layout inside their `.milanopen` folder.
+
+## 11. Future-proofing (not implemented)
 
 * **Sync/collaboration:** row-level change sets with UUIDs and `updated_at`
   are the natural unit for a future operation log / CRDT bridge.

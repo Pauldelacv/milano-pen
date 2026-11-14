@@ -98,6 +98,7 @@ Requirements: macOS 11 Big Sur or later.
 | Imported files (originals) | `…/Milano Pen/assets/` |
 | Thumbnails (regenerated if deleted) | `…/Milano Pen/thumbnails/` |
 | Automatic backups (daily, last 10) | `…/Milano Pen/backups/` |
+| Projects (File → New Project…) | wherever you save them: a `Name.milanopen` folder with the same layout |
 
 **File → Back Up Database…** writes a consistent copy anywhere you like;
 **File → Restore from Backup…** validates a backup and swaps it in (your

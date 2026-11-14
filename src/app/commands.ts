@@ -10,7 +10,8 @@ export type CommandId =
   | 'new-note' | 'new-board' | 'add-image' | 'add-file' | 'import-json' | 'export-markdown' | 'export-json'
   | 'backup' | 'restore' | 'undo' | 'redo' | 'duplicate' | 'delete' | 'bring-to-front' | 'send-to-back'
   | 'search' | 'trash' | 'zoom-in' | 'zoom-out' | 'zoom-reset' | 'zoom-fit' | 'go-home' | 'go-up'
-  | 'settings' | 'shortcuts' | 'open-data-folder' | 'benchmark' | 'website';
+  | 'settings' | 'shortcuts' | 'open-data-folder' | 'benchmark' | 'website'
+  | 'new-project' | 'open-project' | 'open-library' | 'print';
 
 const lastRun = new Map<string, number>();
 
@@ -58,6 +59,10 @@ export function runCommand(id: string, source: 'menu' | 'keyboard' | 'ui' = 'ui'
     case 'open-data-folder': return void A.run(api.openDataFolder());
     case 'benchmark': return void A.generateBenchmark();
     case 'website': return void A.openLink('https://github.com/pauldelacv/milano-pen');
+    case 'new-project': return void A.newProject();
+    case 'open-project': return void A.openProject();
+    case 'open-library': return void A.openLibrary();
+    case 'print': return void A.printBoard();
   }
 }
 
@@ -86,7 +91,10 @@ export function handleKeyDown(e: KeyboardEvent): boolean {
   if (mod && key === 'z') return cmd(e.shiftKey ? 'redo' : 'undo');
   if (mod && key === 'y') return cmd('redo');
   if (mod && key === 'd') return cmd('duplicate');
+  if (mod && e.altKey && e.code === 'KeyN') return cmd('new-project');
   if (mod && key === 'n') return cmd(e.shiftKey ? 'new-board' : 'new-note');
+  if (mod && key === 'o') return cmd('open-project');
+  if (mod && key === 'p') return cmd('print');
   if (mod && e.shiftKey && key === 'i') return cmd('add-image');
   if (mod && e.shiftKey && key === 'h') return cmd('go-home');
   if (mod && e.key === 'ArrowUp') return cmd('go-up');
