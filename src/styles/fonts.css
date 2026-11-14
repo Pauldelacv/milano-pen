@@ -1,0 +1,16 @@
+/*
+ * Google Fonts bundled with the app (SIL Open Font License 1.1, packaged by
+ * Fontsource). They are served from the app bundle: nothing is downloaded.
+ * Each face is only loaded by the webview once a note uses it.
+ */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/lora/400.css';
+@import '@fontsource/lora/700.css';
+@import '@fontsource/lora/400-italic.css';
+@import '@fontsource/playfair-display/400.css';
+@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/caveat/400.css';
+@import '@fontsource/caveat/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';

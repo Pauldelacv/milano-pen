@@ -3,9 +3,21 @@ import { useZoom } from '../canvas/cameraController';
 import { assetUrl, pickVariant } from '../services/assets';
 import type { ImageData } from '../types/models';
 import { CaptionEditor } from './CaptionEditor';
+import { adjustFilter } from './imageAdjust';
+import { ImageToolbar } from './ImageToolbar';
+import { useUiStore } from '../stores/uiStore';
 import type { CardProps } from './registry';
 
-export function ImageCard({ card, editing }: CardProps) {
+/** The toolbar only shows when this image is the whole selection. */
+function SoloToolbar({ cardId, adjust }: { cardId: string; adjust: ImageData['adjust'] }) {
+  const solo = useUiStore((s) => {
+    const keys = Object.keys(s.selection);
+    return keys.length === 1 && keys[0] === cardId;
+  });
+  return solo ? <ImageToolbar cardId={cardId} adjust={adjust} /> : null;
+}
+
+export function ImageCard({ card, editing, selected }: CardProps) {
   const data = card.data as unknown as ImageData;
   const bucket = useZoom((s) => s.bucket);
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
@@ -13,9 +25,11 @@ export function ImageCard({ card, editing }: CardProps) {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [failed, setFailed] = useState(false);
   const ratio = data.width && data.height ? data.height / data.width : card.h ? card.h / card.w : 0.75;
+  const filter = adjustFilter(data.adjust);
   return (
     <figure className="image-card">
-      <div className={`image-frame${loaded['256'] || loaded[variant] ? ' loaded' : ''}`} style={{ aspectRatio: `${1 / ratio}` }}>
+      {selected && !editing && <SoloToolbar cardId={card.id} adjust={data.adjust} />}
+      <div className={`image-frame${loaded['256'] || loaded[variant] ? ' loaded' : ''}`} style={{ aspectRatio: `${1 / ratio}`, filter }}>
         {failed ? (
           <div className="image-missing">Image unavailable</div>
         ) : (

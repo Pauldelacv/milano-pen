@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
+import { adjustFilter } from '../cards/imageAdjust';
 import { assetUrl } from '../services/assets';
 import { useBoardStore } from '../stores/boardStore';
 import { useUiStore } from '../stores/uiStore';
@@ -35,7 +36,7 @@ export function ImageViewer() {
   const data = card.data as unknown as ImageData;
   return (
     <div className="viewer" role="dialog" aria-label="Image viewer" onPointerDown={(e) => e.target === e.currentTarget && useUiStore.getState().setViewer(null)}>
-      <img key={card.id} src={assetUrl(data.assetId, 'original')} alt={data.caption || data.name || ''} decoding="async" />
+      <img key={card.id} style={{ filter: adjustFilter(data.adjust) }} src={assetUrl(data.assetId, 'original')} alt={data.caption || data.name || ''} decoding="async" />
       {(data.caption || data.name) && <div className="viewer-caption">{data.caption || data.name}</div>}
       <button className="viewer-close" aria-label="Close" onClick={() => useUiStore.getState().setViewer(null)}>
         <X size={20} />

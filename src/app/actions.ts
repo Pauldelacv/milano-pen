@@ -6,6 +6,7 @@ import { getCamera, setCamera, switchBoardCamera } from '../canvas/cameraControl
 import { union } from '../canvas/geometry';
 import { cardRect, isCanvasCard } from '../canvas/measure';
 import { pointerOrCenterWorld, stageRect, viewportCenterWorld } from '../canvas/viewport';
+import { parseColor } from '../cards/colorParse';
 import { isUrl } from '../cards/embeds';
 import { textToDoc } from '../editors/richText';
 import { api, BackendError } from '../services/ipc';
@@ -126,6 +127,7 @@ const DEFAULT_SIZE: Partial<Record<CardKind, { w: number; h?: number }>> = {
   note: { w: 240 },
   board: { w: 140 },
   link: { w: 280 },
+  swatch: { w: 140 },
 };
 
 export async function createCards(cards: NewCard[], opts: { edit?: boolean } = {}): Promise<Patch | undefined> {
@@ -161,6 +163,18 @@ export async function addLink(url: string, at?: { x: number; y: number }) {
   const boardId = board().boardId;
   if (!boardId) return;
   return createCards([{ boardId, kind: 'link', ...(at ?? centered('link')), w: 280, data: { url: clean, title: '' } }]);
+}
+
+/** A colour swatch from any CSS colour notation (normalised to #RRGGBB). */
+export async function addSwatch(input: string, at?: { x: number; y: number }) {
+  const hex = parseColor(input);
+  if (!hex) {
+    ui().toast('That isn’t a colour. Try a hex code like #4C6EF5, rgb(76, 110, 245) or a name like “teal”.', { kind: 'error' });
+    return;
+  }
+  const boardId = board().boardId;
+  if (!boardId) return;
+  return createCards([{ boardId, kind: 'swatch', ...(at ?? centered('swatch')), w: DEFAULT_SIZE.swatch?.w, data: { hex } }]);
 }
 
 export async function addTextAsNote(text: string, at?: { x: number; y: number }) {
@@ -261,7 +275,7 @@ function plainTextOf(ids: string[]): string {
   return ids
     .map((id) => cards[id])
     .filter(Boolean)
-    .map((c) => String(c.data.text ?? c.data.title ?? c.data.url ?? c.data.name ?? ''))
+    .map((c) => String(c.data.text ?? c.data.title ?? c.data.url ?? c.data.name ?? c.data.hex ?? ''))
     .filter(Boolean)
     .join('\n\n');
 }
@@ -439,6 +453,7 @@ export async function activateCard(id: string) {
       if (typeof c.data.url === 'string') await openLink(c.data.url);
       break;
     case 'note':
+    case 'swatch':
       ui().select([id]);
       ui().setEditing(id);
       break;

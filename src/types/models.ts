@@ -157,6 +157,8 @@ export interface NoteData {
   /** Plain text of `doc` (search, exports, fallback rendering). */
   text?: string;
   textSize?: TextSize;
+  /** Font id from `editors/fonts.ts`, or "custom:<family>" for an installed font. */
+  font?: string;
 }
 
 export interface ImageData {
@@ -166,6 +168,23 @@ export interface ImageData {
   width?: number;
   height?: number;
   mime?: string;
+  /** Non-destructive colour adjustments (the original file is never modified). */
+  adjust?: ImageAdjust;
+}
+
+/** CSS filter amounts. Percentages are 100 = unchanged; hue is in degrees. */
+export interface ImageAdjust {
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  hue?: number;
+  grayscale?: number;
+  sepia?: number;
+}
+
+export interface SwatchData {
+  /** "#RRGGBB". */
+  hex: string;
 }
 
 export interface FileData {

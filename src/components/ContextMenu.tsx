@@ -4,7 +4,9 @@ import {
   run, selectAll, setColor, updateData, zoomToFit,
 } from '../app/actions';
 import { BOARD_ICONS, BoardIcon } from '../cards/boardIcons';
+import { FontPicker } from '../editors/FontPicker';
 import { COLORS } from '../cards/colors';
+import { copyHex } from '../cards/SwatchCard';
 import { api } from '../services/ipc';
 import { useBoardStore } from '../stores/boardStore';
 import { useUiStore } from '../stores/uiStore';
@@ -54,6 +56,12 @@ export function ContextMenu() {
     if (one?.kind === 'image') {
       items.push({ label: 'View full size', shortcut: '↩', run: () => void activateCard(one.id) });
       items.push({ label: one.data.caption ? 'Edit caption' : 'Add caption', run: () => edit(one.id) });
+      if (one.data.adjust) items.push({ label: 'Reset adjustments', run: () => void updateData(one.id, { adjust: null }, 'Reset adjustments') });
+    }
+    if (one?.kind === 'swatch' && typeof one.data.hex === 'string') {
+      const hex = one.data.hex;
+      items.push({ label: 'Copy hex code', run: () => void copyHex(hex) });
+      items.push({ label: 'Edit colour', shortcut: '↩', run: () => edit(one.id) });
     }
     if (one?.kind === 'link') {
       items.push({ label: 'Open link', shortcut: '↩', run: () => void activateCard(one.id) });
@@ -103,6 +111,12 @@ export function ContextMenu() {
               {s === 'small' ? 'Small' : s === 'normal' ? 'Normal' : 'Large'}
             </button>
           ))}
+        </div>
+      )}
+      {showSize && (
+        <div className="menu-font">
+          <span>Font</span>
+          <FontPicker cardIds={ids} onDone={close} />
         </div>
       )}
       {one?.kind === 'board' && (

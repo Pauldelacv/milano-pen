@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { saveQueue } from '../app/actions';
 import { useBoardStore } from '../stores/boardStore';
 import { useUiStore } from '../stores/uiStore';
+import { FontPicker } from './FontPicker';
 import { extensions } from './richText';
 
 export default function RichTextEditor({ cardId, doc }: { cardId: string; doc: JSONContent }) {
@@ -36,13 +37,13 @@ export default function RichTextEditor({ cardId, doc }: { cardId: string; doc: J
 
   return (
     <>
-      {editor && <FormatBar editor={editor} />}
+      {editor && <FormatBar editor={editor} cardId={cardId} />}
       <EditorContent editor={editor} data-no-drag />
     </>
   );
 }
 
-function FormatBar({ editor }: { editor: Editor }) {
+function FormatBar({ editor, cardId }: { editor: Editor; cardId: string }) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -111,6 +112,8 @@ function FormatBar({ editor }: { editor: Editor }) {
           {btn(state.h2, 'Heading', () => chain().toggleHeading({ level: 2 }).run(), <Heading2 size={14} />)}
           {btn(state.bullet, 'Bulleted list', () => chain().toggleBulletList().run(), <List size={14} />)}
           {btn(state.ordered, 'Numbered list', () => chain().toggleOrderedList().run(), <ListOrdered size={14} />)}
+          <span className="fmt-sep" />
+          <FontPicker cardIds={[cardId]} compact />
           <span className="fmt-sep" />
           {btn(state.link, 'Link', () => {
             setHref(editor.getAttributes('link').href ?? '');
