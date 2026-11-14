@@ -5,7 +5,7 @@ All notable changes to Milano Pen. The format follows
 [Semantic Versioning](https://semver.org/). Pre-releases carry a suffix
 (`-beta.N`, `-rc.N`).
 
-## [Unreleased]
+## [0.1.0-beta.2] — 2026-11-14
 
 ### Added
 
