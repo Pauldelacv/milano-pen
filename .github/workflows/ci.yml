@@ -94,8 +94,6 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.target }}
-      - name: Generate app icons from the SVG source
-        run: npm run icons:generate
       - name: Validate the Tauri configuration
         run: npx tauri info
       - name: Build Milano Pen.app (unsigned, ad-hoc signature)

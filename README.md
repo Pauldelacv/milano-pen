@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets-src/icon.svg" width="128" height="128" alt="Milano Pen icon">
+  <img src="src-tauri/icons/128x128@2x.png" width="128" height="128" alt="Milano Pen icon">
 </p>
 
 <h1 align="center">Milano Pen</h1>
