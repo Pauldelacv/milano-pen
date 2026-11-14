@@ -180,7 +180,9 @@ in the [roadmap](docs/ROADMAP.md) or an issue labelled `good first issue`.
 Releases are built by GitHub Actions from version tags (`git tag v0.2.0 &&
 git push origin v0.2.0`): CI runs, Apple Silicon and Intel DMGs are built,
 checksums are computed and a **draft** release is created for a maintainer to
-review and publish. Details in [docs/RELEASING.md](docs/RELEASING.md).
+review and publish. Tags with a suffix (`v0.1.0-beta.1`) become GitHub
+pre-releases. Changes are listed in [CHANGELOG.md](CHANGELOG.md); details in
+[docs/RELEASING.md](docs/RELEASING.md).
 
 ## Security and privacy
 

@@ -23,6 +23,16 @@
    If anything fails, nothing is published.
 5. Review the draft release, edit the notes, and publish it.
 
+Add a section to `CHANGELOG.md` in the same pull request as the version bump.
+
+### Pre-releases (beta, release candidate)
+
+Use a SemVer suffix, e.g. `0.1.0-beta.1` or `1.0.0-rc.1`, in all three
+version fields and in the tag (`v0.1.0-beta.1`). Any tag containing `-` is
+published as a GitHub **pre-release**, is never marked "Latest", and its notes
+start with a reminder to back up before upgrading. Increment the last number
+for each new beta (`-beta.2`, …); the final release drops the suffix.
+
 ## Code signing and notarization (optional)
 
 Without credentials, builds get an ad-hoc signature (required to run on Apple
