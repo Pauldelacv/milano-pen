@@ -1,34 +1,50 @@
+# One run a month. Minor and patch updates arrive as a single PR per
+# ecosystem; each major update gets its own PR, except Tauri and Tiptap,
+# whose packages must move together and are grouped.
 version: 2
 updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
     groups:
-      tauri:
-        patterns: ['tauri*']
       rust-minor:
         update-types: [minor, patch]
+      tauri-major:
+        patterns: ['tauri*']
+        update-types: [major]
 
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
     groups:
-      tauri:
-        patterns: ['@tauri-apps/*']
-      tiptap:
-        patterns: ['@tiptap/*']
-      dev-tooling:
-        dependency-type: development
+      npm-minor:
         update-types: [minor, patch]
+      tauri-major:
+        patterns: ['@tauri-apps/*']
+        update-types: [major]
+      tiptap-major:
+        patterns: ['@tiptap/*']
+        update-types: [major]
+    ignore:
+      # Majors we are not migrating to yet. Remove an entry to get them again.
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Follows the Node version in .nvmrc, not the latest Node release.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       actions:
         patterns: ['*']
